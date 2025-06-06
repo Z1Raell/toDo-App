@@ -2,11 +2,12 @@ import type { Todo } from "../types/todo";
 
 type Props = {
     todo: Todo,
-    onToggle: (id: string) => void
+    onToggle: (id: string) => void,
+    onDelete: (id: string) => void
 }
 
 
-export function TodoItem({ todo, onToggle }: Props) {
+export function TodoItem({ todo, onToggle,onDelete }: Props) {
     return (
         <li>
             <label>
@@ -15,6 +16,7 @@ export function TodoItem({ todo, onToggle }: Props) {
                     checked={todo.completed}
                     onChange={() => onToggle(todo.id)}
                 />
+                <input type="button" value="Delet" onClick={() => onDelete(todo.id)} />
                 <span style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
                     {todo.title}
                 </span>
