@@ -1,33 +1,103 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { TodoForm } from "../components/todoForm"
 import { TodoItem } from "../components/TodoItem"
 import type { Todo } from "../types/todo"
 
-const initialTodos: Todo[] = [
-    { id: '1', title: 'Выучить React', completed: false },
-    { id: '2', title: 'Сделать моковый список', completed: true },
-];
+
 
 export function TodoPage() {
-    const [todos, setTodos] = useState<Todo[]>(initialTodos)
-    const handleAdd = (title: string) => {
-        const newTodo: Todo = {
-            id: crypto.randomUUID(),
-            title,
-            completed: false
+    const [todos, setTodos] = useState<Todo[]>([]);
+    useEffect(() => {
+        const fetchTodo = async () => {
+            const token = localStorage.getItem("token")
+            try {
+                const responce = await fetch("http://localhost:3000/api/todo", {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                })
+
+                if (!responce.ok) {
+                    throw new Error("Failed to fetch todos")
+                }
+                const data = await responce.json();
+                setTodos(data.todos)
+            } catch (error) {
+                console.error(error)
+            }
         }
-        setTodos((prev) => [newTodo, ...prev])
+        fetchTodo()
+    }, [])
+    const addTodo = async (title: string) => {
+        const token = localStorage.getItem("token");
+
+        try {
+            const response = await fetch("http://localhost:3000/api/todo", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ title }),
+            });
+
+            if (!response.ok) throw new Error("Failed to add todo");
+
+            const data = await response.json();
+            setTodos((prev) => [...prev, data.todo]);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+
+
+    const handleToggle = async (id: string) => {
+        const token = localStorage.getItem("token");
+        const todo = todos.find((t) => t._id === id);
+        if (!todo) {
+            return
+        }
+
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/todo/${id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ completed: !todo.completed }),
+            });
+            if (!response.ok) throw new Error("Failed to update todo");
+            const data = await response.json();
+
+            setTodos((prev) =>
+                prev.map((t) => (t._id === id ? data.todo : t))
+            );
+
+        } catch (error) {
+            console.error(error);
+
+        }
     }
-    const handleToggle = (id: string) => {
-        setTodos(prev => {
-            return prev.map(todo =>
-                todo.id === id ? { ...todo, completed: !todo.completed }
-                    : todo
-            )
-        })
-    }
-    const handleDelete = (id: string) => {
-        setTodos(prev => prev.filter(todo => todo.id !== id))
+    const handleDelete = async  (id: string) => {
+        const token = localStorage.getItem("token");
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/todo/${id}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!response.ok) throw new Error("Failed to delete todo");
+
+            setTodos((prev) => prev.filter((todo) => todo._id !== id));
+        } catch {
+
+        }
     }
 
     return (
@@ -35,14 +105,14 @@ export function TodoPage() {
             <h1>
                 Мои задачи
             </h1>
-            <TodoForm onAdd={handleAdd} />
+            <TodoForm onAdd={addTodo} />
             {todos.length > 0
                 ? (
                     < div >
 
                         <ul>
                             {todos.map((todo) =>
-                                <TodoItem key={todo.id} onToggle={handleToggle} todo={todo} onDelete={handleDelete} />
+                                <TodoItem key={todo._id} onToggle={handleToggle} todo={todo} onDelete={handleDelete} />
                             )}
                         </ul>
                     </div >
