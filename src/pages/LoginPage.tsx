@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { safeFetch } from "../utils/safeFetch";
 
 export function LoginPage() {
 
@@ -14,7 +15,7 @@ export function LoginPage() {
         setError("")
 
         try {
-            const responce = await fetch("http://localhost:3000/api/auth/login", {
+            const responce = await safeFetch("http://localhost:3000/api/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -27,8 +28,12 @@ export function LoginPage() {
             }
             localStorage.setItem("token", data.token)
             navigate("/todos")
-        } catch (error: any) {
-            setError(error.message)
+        } catch (err: any) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Неизвестная ошибка входа");
+            }
         }
     }
 
@@ -41,7 +46,7 @@ export function LoginPage() {
                 <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 <input type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <button type="submit">Войти</button>
-                 {error && <ErrorMessage message={error} />}
+                {error && <ErrorMessage message={error} />}
             </form>
             <p>Нет акаунта ? <Link to="/register" > Зарегистрируйся</Link> </p>
         </>

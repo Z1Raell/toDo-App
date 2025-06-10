@@ -24,6 +24,10 @@ export function RegisterPage() {
                 },
                 body: JSON.stringify({ email, password, userName })
             })
+            if (!data.token) {
+                throw new Error("Токен не получен от сервера");
+            }
+
             localStorage.setItem("token", data.token)
             navigate("/todos")
         } catch (err) {

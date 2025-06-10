@@ -5,17 +5,24 @@ import type { Todo } from "../types/todo"
 import { Navbar } from "../components/Navbar";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { safeFetch } from "../utils/safeFetch";
+import { useNavigate } from "react-router-dom";
 
 
 
 export function TodoPage() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [err, setErr] = useState<string | null>(null)
+    const navigate = useNavigate()
 
     const token = localStorage.getItem("token");
 
     useEffect(() => {
         const fetchTodo = async () => {
+            if (!token) {
+                navigate("/"); 
+                return;
+            }
+
             try {
                 const data = await safeFetch("http://localhost:3000/api/todo", {
                     headers: { Authorization: `Bearer ${token}` },
@@ -23,7 +30,15 @@ export function TodoPage() {
                 setTodos(data.todos);
                 setErr(null);
             } catch (error) {
-                if (error instanceof Error) setErr(error.message);
+                if (error instanceof Error) {
+                    if (error.message.includes("jwt") || error.message.includes("token")) {
+                        localStorage.removeItem("token");
+                        navigate("/"); // 🔒 невалидный токен — редирект
+                    } else {
+                        setErr(error.message);
+                    }
+                }
+
             }
         };
 
