@@ -2,37 +2,36 @@ import { useEffect, useState } from "react"
 import { TodoForm } from "../components/todoForm"
 import { TodoItem } from "../components/TodoItem"
 import type { Todo } from "../types/todo"
+import { Navbar } from "../components/Navbar";
+import { ErrorMessage } from "../components/ErrorMessage";
+import { safeFetch } from "../utils/safeFetch";
 
 
 
 export function TodoPage() {
     const [todos, setTodos] = useState<Todo[]>([]);
+    const [err, setErr] = useState<string | null>(null)
+
+    const token = localStorage.getItem("token");
+
     useEffect(() => {
         const fetchTodo = async () => {
-            const token = localStorage.getItem("token")
             try {
-                const responce = await fetch("http://localhost:3000/api/todo", {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                })
-
-                if (!responce.ok) {
-                    throw new Error("Failed to fetch todos")
-                }
-                const data = await responce.json();
-                setTodos(data.todos)
+                const data = await safeFetch("http://localhost:3000/api/todo", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setTodos(data.todos);
+                setErr(null);
             } catch (error) {
-                console.error(error)
+                if (error instanceof Error) setErr(error.message);
             }
-        }
+        };
+
         fetchTodo()
     }, [])
     const addTodo = async (title: string) => {
-        const token = localStorage.getItem("token");
-
         try {
-            const response = await fetch("http://localhost:3000/api/todo", {
+            const data = await safeFetch("http://localhost:3000/api/todo", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -40,20 +39,17 @@ export function TodoPage() {
                 },
                 body: JSON.stringify({ title }),
             });
-
-            if (!response.ok) throw new Error("Failed to add todo");
-
-            const data = await response.json();
             setTodos((prev) => [...prev, data.todo]);
-        } catch (err) {
-            console.error(err);
+            setErr(null);
+        } catch (error) {
+            if (error instanceof Error) setErr(error.message);
         }
+
     };
 
 
 
     const handleToggle = async (id: string) => {
-        const token = localStorage.getItem("token");
         const todo = todos.find((t) => t._id === id);
         if (!todo) {
             return
@@ -61,7 +57,7 @@ export function TodoPage() {
 
 
         try {
-            const response = await fetch(`http://localhost:3000/api/todo/${id}`, {
+            const data = await safeFetch(`http://localhost:3000/api/todo/${id}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -69,42 +65,41 @@ export function TodoPage() {
                 },
                 body: JSON.stringify({ completed: !todo.completed }),
             });
-            if (!response.ok) throw new Error("Failed to update todo");
-            const data = await response.json();
 
             setTodos((prev) =>
                 prev.map((t) => (t._id === id ? data.todo : t))
             );
-
+            setErr(null);
         } catch (error) {
-            console.error(error);
-
+            if (error instanceof Error) setErr(error.message);
         }
-    }
-    const handleDelete = async  (id: string) => {
-        const token = localStorage.getItem("token");
 
+    }
+    const handleDelete = async (id: string) => {
         try {
-            const response = await fetch(`http://localhost:3000/api/todo/${id}`, {
+            await safeFetch(`http://localhost:3000/api/todo/${id}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            if (!response.ok) throw new Error("Failed to delete todo");
-
             setTodos((prev) => prev.filter((todo) => todo._id !== id));
-        } catch {
-
+            setErr(null);
+        } catch (error) {
+            if (error instanceof Error) setErr(error.message);
         }
+
     }
+    console.log(err)
 
     return (
         <>
+            <Navbar />
             <h1>
                 Мои задачи
             </h1>
+            {err && <ErrorMessage message={err} />}
             <TodoForm onAdd={addTodo} />
             {todos.length > 0
                 ? (

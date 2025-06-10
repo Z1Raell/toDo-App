@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ErrorMessage } from "../components/ErrorMessage";
 
 export function LoginPage() {
 
@@ -40,7 +41,7 @@ export function LoginPage() {
                 <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 <input type="password" placeholder="Пароль" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <button type="submit">Войти</button>
-                {error && <p style={{ color: "red" }}>{error}</p>}
+                 {error && <ErrorMessage message={error} />}
             </form>
             <p>Нет акаунта ? <Link to="/register" > Зарегистрируйся</Link> </p>
         </>

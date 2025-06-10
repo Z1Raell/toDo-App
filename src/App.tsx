@@ -19,10 +19,10 @@ function App() {
         <Route path='/' element={<LoginPage />} />
         <Route path='/register' element={<RegisterPage />} />
         <Route path='/todos' element={
-          <ProtectedRoute>
-            <TodoPage />
-          </ProtectedRoute>
-        }
+            <ProtectedRoute>
+              <TodoPage />
+            </ProtectedRoute>
+          }
         />
       </Routes>
     </BrowserRouter>
